@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 public class Main {
 
-    static Logger logger = LogFactory.getLogger(Main.class);
+    //static Logger logger = LogFactory.getLogger(Main.class);
 
 
 
@@ -30,7 +30,7 @@ public class Main {
                     .collect(Collectors.toList());
             entityPath = args[1];
         }else {
-            logger.error("파라메터 값이 없습니다.");
+            System.out.println("파라메터 값이 없습니다.");
             return ;
         }
 
@@ -50,6 +50,10 @@ public class Main {
                 }
             }
 
+        } else {
+            System.out.println("낄낄"+entityFile.toPath());
+            CodeGen codeGen = new CodeGen(entityFile.toPath(), types);
+            //codeGen.generate();
         }
 
     }
