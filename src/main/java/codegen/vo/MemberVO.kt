@@ -1,6 +1,6 @@
-package codegen
+package codegen.vo
 
-data class MemberDTO (
+data class MemberVO (
 
         var isID : Boolean,
         var isIdGenerated : Boolean,
@@ -11,6 +11,6 @@ data class MemberDTO (
         var type : String,
         var length : Int = 255,
 
-        var annotations : List<MemberAnnotationModel>
+        var annotations : List<MemberAnnotationVO>
 
 )

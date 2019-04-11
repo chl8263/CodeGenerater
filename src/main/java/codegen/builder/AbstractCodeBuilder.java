@@ -1,5 +1,6 @@
-package codegen;
+package codegen.builder;
 
+import codegen.vo.EntityVO;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 
@@ -7,12 +8,12 @@ import java.nio.file.Path;
 
 public abstract class AbstractCodeBuilder {
 
-    private final EntityDTO entityDTO;
+    private final EntityVO entityVO;
     private final String templatePath;
     private final VelocityEngine templateEngine;
 
-    public AbstractCodeBuilder(EntityDTO entityDTO, String templatePath, VelocityEngine templateEngine) {
-        this.entityDTO = entityDTO;
+    public AbstractCodeBuilder(EntityVO entityVO, String templatePath, VelocityEngine templateEngine) {
+        this.entityVO = entityVO;
         this.templatePath = templatePath;
         this.templateEngine = templateEngine;
     }
@@ -29,8 +30,8 @@ public abstract class AbstractCodeBuilder {
         return templateEngine.getTemplate(templatePath);
     }
 
-    protected  EntityDTO entityDTO (){
-        return entityDTO;
+    protected EntityVO entityVO (){
+        return entityVO;
     }
 }
 

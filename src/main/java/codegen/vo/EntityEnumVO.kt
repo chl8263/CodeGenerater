@@ -1,6 +1,6 @@
-package codegen
+package codegen.vo
 
-data class EntityEnumDTO(
+data class EntityEnumVO(
 
         var name : String,
         var type : String,

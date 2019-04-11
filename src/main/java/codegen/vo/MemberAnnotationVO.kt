@@ -1,8 +1,8 @@
-package codegen
+package codegen.vo
 
 import java.util.*
 
-data class MemberAnnotationModel (
+data class MemberAnnotationVO (
 
         var type : String ,
         var definition : String,

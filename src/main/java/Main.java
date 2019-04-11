@@ -46,7 +46,7 @@ public class Main {
 
             for(File file : entityFile.listFiles()){
                 if(file.getName().endsWith(".java")){
-                    CodeGen codeGen = new CodeGen()
+                    CodeGen codeGen = new CodeGen(entityFile.toPath() , types);
                 }
             }
 

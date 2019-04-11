@@ -1,8 +1,8 @@
-package codegen
+package codegen.vo
 
 import java.nio.file.Path
 
-data class EntityDTO(
+data class EntityVO(
 
         var path : Path,
         var basePath : Path,
@@ -13,10 +13,10 @@ data class EntityDTO(
         var name : String,
         var shortName : String,
         var pakageName : String,
-        var enumtype : List<EntityEnumDTO>,
+        var enumtype : List<EntityEnumVO>,
 
-        var id : MemberDTO,
-        var members : List<MemberDTO>
+        var id : MemberVO,
+        var members : List<MemberVO>
 
 
         )
