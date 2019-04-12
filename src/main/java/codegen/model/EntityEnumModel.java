@@ -21,4 +21,13 @@ public class EntityEnumModel {
     public List<String> getValues() {
         return values;
     }
+
+    @Override
+    public String toString() {
+        return "========== Member Model =========\n" +
+                "type --> [" + type+"]\n " +
+                "name --> [" + name +"]\n " +
+                "values --> [" + values+"]\n "+
+                "====================================\n";
+    }
 }

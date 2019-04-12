@@ -11,7 +11,9 @@ import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.EnumConstantDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MemberValuePair;
 import com.github.javaparser.ast.expr.Name;
@@ -65,7 +67,7 @@ public class CodeGen {
 
             CompilationUnit compilationUnit = javaParser.parse(new String(Files.readAllBytes(path)));
 
-            /*
+            /**
             *   entity VO 의 import 를 java parser 를 통해 읽어 들인다.
             * */
             Map<String, String> imports = Maps.newHashMap();
@@ -100,7 +102,7 @@ public class CodeGen {
             Path rootPath = rootPath(path, entityModel.packageName); // root 경로를 찾아감 여기서는 src/main/java
 
 
-            /*
+            /**
             *       fieldDeclaration 이라는 것이 java 파일의 어노테이션을 포함한
             *       하나의 맴버 변수를 가져온다.
             *       예를들어 맴버 변수가 5개가 있다면 visit은 5번 돌면서 모든 맴버 값들을 가져온다.
@@ -113,12 +115,16 @@ public class CodeGen {
                     Optional<AnnotationExpr> idAnnotation = n.getAnnotationByName("Id");
                     memberModel.type = n.getCommonType().toString();
                     memberModel.name = n.getVariable(0).getNameAsString();
-                    /*memberModel.packageName = imports.get(memberModel.type);
+
+
+                    memberModel.packageName = imports.get(memberModel.type);
                     if (memberModel.packageName == null && isSamePackage(entityModel.path.getParent(), memberModel.type)) {
                         memberModel.packageName = entityModel.packageName;
                     }
-                    memberModel.isId = idAnnotation.isPresent();
+                    memberModel.isId = idAnnotation.isPresent();    // parsing 한 어노테이션이 @id 이면
                     memberModel.isIdGenerated = n.getAnnotationByName("GeneratedValue").isPresent();
+
+                    //---------------- enumModel --------
                     Optional<EntityEnumModel> enumModel = parseEnum(rootPath, memberModel);
                     if (enumModel.isPresent()) {
                         memberModel.isEnum = true;
@@ -126,8 +132,15 @@ public class CodeGen {
                     } else {
                         memberModel.isEnum = false;
                     }
-                    memberModel.inputType = inputType(memberModel.type, memberModel.length);
+                    //-----------------------------------
 
+                    memberModel.inputType = inputType(memberModel.type, memberModel.length);    //꼭알아내야함
+
+                    /**
+                     *     getAnnotationByName("Column") 등으로 해당 맴버변수의 어노테이을 확인하고
+                     *     어노테이션의 속성도 알아낼 수 있다.
+                     *      ex) @Column(name = "name", length = 36) 의 name 값이나 length 값
+                    * */
                     Optional<AnnotationExpr> columnOptional = n.getAnnotationByName("Column");
                     if (columnOptional.isPresent()) {
                         AnnotationExpr column = columnOptional.get();
@@ -141,7 +154,7 @@ public class CodeGen {
                             }
                         }
                     }
-                    Set<String> excludes = Sets.newHashSet("Column", "Id", "GeneratedValue", "Enumerated");
+                    /*Set<String> excludes = Sets.newHashSet("Column", "Id", "GeneratedValue", "Enumerated");
                     List<MemberAnnotationModel> annotationModels = Lists.newArrayList();
                     for (AnnotationExpr annotation : n.getAnnotations()) {
                         if (excludes.contains(annotation.getName().toString())) {
@@ -170,6 +183,8 @@ public class CodeGen {
                     } else {
                         entityModel.members.add(memberModel);
                     }*/
+
+                    System.out.println(memberModel);
                 }
             };
 
@@ -184,6 +199,73 @@ public class CodeGen {
         return entityModel;
     }
 
+
+    /**
+     *      input Type 무엇인지 꼭 알아내자.
+     *
+    * */
+    private String inputType(String type, Integer length) {
+        switch (type) {
+            case "String":
+                if (length != null && length >= 512) {
+                    return "textarea";
+                } else {
+                    return "text";
+                }
+            case "Integer":
+            case "Long":
+            case "Double":
+            case "BigDecimal":
+            case "Float":
+                return "number";
+            case "Date":
+            case "LocalDateTime":
+            case "OffsetDateTime":
+            case "ZonedDateTime":
+                return "datepicker";
+            default:
+                return "text";
+        }
+    }
+
+    Optional<EntityEnumModel> parseEnum(Path rootPath, MemberModel member) {
+        try {
+            if (member.packageName == null) {
+                return Optional.empty();
+            }
+            if (enumMappings.containsKey(member.type)) {
+                return Optional.of(enumMappings.get(member.type));
+            }
+            Path path = rootPath.resolve(member.packageName.replaceAll("\\.", "/")).resolve(member.type + ".java");
+            List<String> values = Lists.newArrayList();
+            String enumType = null;
+            if (path.toFile().exists()) {
+                CompilationUnit compilationUnit = javaParser.parse(new String(Files.readAllBytes(path)));
+                TypeDeclaration<?> target = compilationUnit.getType(0);
+                enumType = target.getName().toString();
+                for (Node childNode : target.getChildNodes()) {
+                    if (childNode instanceof EnumConstantDeclaration) {
+                        EnumConstantDeclaration enumValue = (EnumConstantDeclaration) childNode;
+                        values.add(enumValue.getNameAsString());
+                    }
+                }
+            }
+
+            if (values.isEmpty()) {
+                return Optional.empty();
+            }
+
+            EntityEnumModel enumModel = new EntityEnumModel();
+            enumModel.name = member.name;
+            enumModel.type = enumType;
+            enumModel.values = values;
+            return Optional.of(enumModel);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Optional.empty();
+        }
+    }
+
     Path rootPath(Path path, String packageName) {
         Path current = path.getParent();
         Iterator<String> iterator = Splitter.on(".").splitToList(packageName).iterator();
@@ -195,6 +277,9 @@ public class CodeGen {
         return current;
     }
 
+    private boolean isSamePackage(Path basePath, String typeName) {
+        return basePath.resolve(typeName + ".java").toFile().exists();
+    }
 
     private String shortName(String typeName){
         StringBuilder sb = new StringBuilder(typeName);
